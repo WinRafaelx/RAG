@@ -3,6 +3,9 @@ from pathlib import Path
 from app.characters import extract_known_characters
 from app.models import Chapter, Chunk
 
+QUOTE_COMPLETION_OVERFLOW_CHARS = 250
+FINAL_CHUNK_MIN_RATIO = 4
+
 
 def chunk_chapter(
     chapter: Chapter,
@@ -40,7 +43,7 @@ def _build_base_chunks(paragraphs: list[str], max_chars: int) -> list[str]:
             continue
 
         candidate = "\n\n".join([*current, clean_paragraph]) if current else clean_paragraph
-        if len(candidate) <= max_chars:
+        if len(candidate) <= max_chars or _can_complete_open_quote(current, candidate, max_chars):
             current = [*current, clean_paragraph]
         else:
             chunks.append("\n\n".join(current))
@@ -48,7 +51,7 @@ def _build_base_chunks(paragraphs: list[str], max_chars: int) -> list[str]:
 
     if current:
         chunks.append("\n\n".join(current))
-    return [chunk for chunk in chunks if chunk.strip()]
+    return _merge_tiny_final_chunk([chunk for chunk in chunks if chunk.strip()], max_chars)
 
 
 def _split_long_paragraph(paragraph: str, max_chars: int) -> list[str]:
@@ -57,6 +60,37 @@ def _split_long_paragraph(paragraph: str, max_chars: int) -> list[str]:
         for index in range(0, len(paragraph), max_chars)
         if paragraph[index : index + max_chars].strip()
     ]
+
+
+def _can_complete_open_quote(current: list[str], candidate: str, max_chars: int) -> bool:
+    if not current:
+        return False
+    current_content = "\n\n".join(current)
+    return (
+        _has_unbalanced_dialogue_quotes(current_content)
+        and not _has_unbalanced_dialogue_quotes(candidate)
+        and len(candidate) <= max_chars + QUOTE_COMPLETION_OVERFLOW_CHARS
+    )
+
+
+def _has_unbalanced_dialogue_quotes(content: str) -> bool:
+    quote_pairs = (("“", "”"), ("‘", "’"), ('"', '"'))
+    return any(
+        content.count(open_quote) % 2 != content.count(close_quote) % 2
+        for open_quote, close_quote in quote_pairs
+    )
+
+
+def _merge_tiny_final_chunk(contents: list[str], max_chars: int) -> list[str]:
+    if len(contents) < 2:
+        return contents
+    min_final_chars = min(250, max_chars // FINAL_CHUNK_MIN_RATIO)
+    if len(contents[-1]) >= min_final_chars:
+        return contents
+    merged = f"{contents[-2]}\n\n{contents[-1]}"
+    if len(merged) > max_chars + min_final_chars:
+        return contents
+    return [*contents[:-2], merged]
 
 
 def _apply_overlap(contents: list[str], overlap_chars: int) -> list[str]:

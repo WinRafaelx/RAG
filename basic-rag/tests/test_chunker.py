@@ -36,6 +36,24 @@ def test_splits_by_paragraph_groups_when_max_chars_is_exceeded():
     assert [chunk.content for chunk in chunks] == ["ก" * 20 + "\n\n" + "ข" * 20, "ค" * 20]
 
 
+def test_merges_tiny_final_chunk_into_previous_chunk():
+    chapter = make_chapter(["ก" * 90, "ข" * 90, "ค" * 20])
+
+    chunks = chunk_chapter(chapter, max_chars=185, overlap_chars=0)
+
+    assert len(chunks) == 1
+    assert chunks[0].content == "ก" * 90 + "\n\n" + "ข" * 90 + "\n\n" + "ค" * 20
+
+
+def test_allows_small_overflow_to_avoid_ending_with_open_dialogue_quote():
+    chapter = make_chapter(["ก" * 45, "“" + "ข" * 50, "ค" * 20 + "”"])
+
+    chunks = chunk_chapter(chapter, max_chars=100, overlap_chars=0)
+
+    assert len(chunks) == 1
+    assert chunks[0].content.endswith("”")
+
+
 def test_long_paragraph_fallback_split():
     chapter = make_chapter(["ก" * 55])
 

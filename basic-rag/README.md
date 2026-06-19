@@ -81,6 +81,21 @@ python -m app.ingest data --characters characters.txt --out chunks
 
 `characters.txt` should contain one character name per line.
 
+## Quality Check Chunks
+
+Generate human-readable and machine-readable QA reports from chunk JSON files:
+
+```bash
+python -m app.chunk_qa chunks --out chunk_quality_report.md --json chunk_quality_report.json
+```
+
+The Markdown report shows the highest-priority chunks to review first. Warnings include short chunks, long chunks, suspicious starts, unbalanced dialogue quotes, soft endings, and chunks with no matched characters.
+
+The chunker also includes two quality guards:
+
+- tiny final chunks are merged into the previous chunk when the combined chunk remains reasonable
+- quoted dialogue can exceed the normal character limit slightly when needed to avoid splitting before the closing quote
+
 ## Example Output JSON
 
 ```json

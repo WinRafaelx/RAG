@@ -1,3 +1,28 @@
 data/
 *.pdf
 *.epub
+
+# Local environment variables (API keys, DB passwords)
+.env
+basic-rag/.env
+
+# Temporary test scripts
+basic-rag/test_mcp_client.py
+
+# Python test coverage and cache
+basic-rag/.coverage
+basic-rag/.pytest_cache/
+basic-rag/.venv/
+
+# Python compiled files
+__pycache__/
+*.pyc
+
+# IDE / Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+.agents/
