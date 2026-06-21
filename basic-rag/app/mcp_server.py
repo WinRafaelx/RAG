@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 import functools
-import threading
 
 # Suppress Hugging Face symlinks warning (belt-and-suspenders alongside HF_HUB_OFFLINE)
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
